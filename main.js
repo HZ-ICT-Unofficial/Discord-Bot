@@ -8,12 +8,15 @@ for (const file of commandFiles) {
     commands[commandName] = command;
 }
 
-
 require("dotenv").config()
 const Discord = require("discord.js")
 const clientIntents = new Discord.Intents(32767);
 const client = new Discord.Client({ intents: clientIntents, partials: ['MESSAGE', 'CHANNEL', 'REACTION']})
 const prefix = '!'
+
+const clearReactionMessages = () => {
+    // jsonHandler.read('data/reaction-messages.json').reactionMessages.forEach(())
+}
 
 client.once('ready', () => {
     console.log("Online!")
@@ -25,9 +28,6 @@ client.on('messageCreate', (message) => {
     const args = message.content.slice(prefix.length).split(" ");
     const commandName = args.shift().toLowerCase();
     const command = commands[commandName]
-    console.log(commandName)
-    console.log(command)
-    console.log(commands)
     if(command){
         command(client, message, args)
     }
