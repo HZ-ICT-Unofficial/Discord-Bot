@@ -12,7 +12,7 @@ require("dotenv").config()
 const Discord = require("discord.js")
 const clientIntents = new Discord.Intents(32767);
 const client = new Discord.Client({ intents: clientIntents, partials: ['MESSAGE', 'CHANNEL', 'REACTION']})
-const prefix = '!'
+const prefix = process.env.PREFIX
 
 const clearReactionMessages = () => {
     // jsonHandler.read('data/reaction-messages.json').reactionMessages.forEach(())
