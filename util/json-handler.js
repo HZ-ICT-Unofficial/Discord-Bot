@@ -33,10 +33,16 @@ JSONHandler.find = async (path, func, fileData) => {
 }
 
 JSONHandler.findFirst = async (path, func, fileData) => {
-    const results = await JSONHandler.find(path, func);
+    const results = await JSONHandler.find(path, func, fileData);
     if (results) {
         return results[0];
     }
+}
+
+JSONHandler.add = async (path, newData) => {
+    const fileData = await JSONHandler.read(path);
+    fileData.data.push(newData);
+    await JSONHandler.write(path, fileData);
 }
 
 JSONHandler.remove = async (path, func, fileData) => {
