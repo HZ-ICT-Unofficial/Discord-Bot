@@ -50,7 +50,7 @@ const run = async (interaction) => {
 
 const info = new SlashCommandBuilder()
     .setName('reactrole')
-    .setDescription('Send a french bread!')
+    .setDescription('Allows you to give roles based on reactions.')
     .addStringOption(option =>
         option
             .setName('message_id')
