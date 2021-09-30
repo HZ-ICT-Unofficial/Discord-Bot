@@ -1,9 +1,12 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const jsonHandler = require('../util/json-handler');
+const reactionsPath = `${process.env.DATA_DIR}/reactions.json`;
 
 const silentError = (err) => {
     return;
-} 
+}
+// TODO: Fix removing multiple roles at once from the same emoji.
+// (Giving already works)
 
 const matchesReaction = (reaction, newReactionData) => {
     return reaction.messageId === newReactionData.messageId
@@ -16,8 +19,29 @@ const findExistingReactions = (currentReactions, newReactionData) => {
     return currentReactions.some(reaction => matchesReaction(reaction, newReactionData));
 }
 
+const showExistingReactionRoles = async (interaction) => {
+    const messageId = interaction.options.getString('message_id', false);
+    const fileData = await jsonHandler.read(reactionsPath);
+    if (messageId) {
+        const results = await jsonHandler.find(reactionsPath, (reactionRole) => reactionRole.messageId === messageId, fileData);
+        if (results) {
+            console.log(results);
+            // TODO: Show these in an embed
+        }
+    } else {
+        // TODO: Show these in an embed
+        console.log(fileData.data);
+    }
+    await interaction.reply('Showing existing reaction roles');
+}
+
 const run = async (interaction) => {
     const subcommand = interaction.options.getSubcommand(true);
+
+    if (subcommand === 'show') {
+        await showExistingReactionRoles(interaction);
+        return;
+    }
 
     const messageId = interaction.options.getString('message_id', true);
     const role = interaction.options.getRole('role', true);
@@ -30,7 +54,7 @@ const run = async (interaction) => {
         return;
     }
 
-    const fileData = await jsonHandler.read(`${process.env.DATA_DIR}/reactions.json`);
+    const fileData = await jsonHandler.read(reactionsPath);
 
     const newReactionData = {
         messageId: messageId,
@@ -40,11 +64,11 @@ const run = async (interaction) => {
     }
 
     if (subcommand === 'add' && !findExistingReactions(fileData.data, newReactionData)) {
-        await jsonHandler.add(`${process.env.DATA_DIR}/reactions.json`, newReactionData, fileData);
+        await jsonHandler.add(reactionsPath, newReactionData, fileData);
         await message.react(emoji);
         await interaction.reply('Added new reaction role!');
     } else if (subcommand === 'remove') {
-        await jsonHandler.remove(`${process.env.DATA_DIR}/reactions.json`, (storedReactionRole) => matchesReaction(storedReactionRole, newReactionData));
+        await jsonHandler.remove(reactionsPath, (storedReactionRole) => matchesReaction(storedReactionRole, newReactionData));
         await interaction.reply('Removed reaction role!')
     } else {
         await interaction.reply('This reaction role already exists!');
@@ -77,12 +101,12 @@ const info = new SlashCommandBuilder()
                 option
                     .setName('channel')
                     .setDescription('The channel where the message is located.')
-                    .setRequired(false))
+            )
     )
     .addSubcommand(subcommand => 
         subcommand
             .setName('remove')
-            .setDescription('Removes an existing reaction role')
+            .setDescription('Removes an existing reaction role.')
             .addStringOption(option =>
                 option
                     .setName('message_id')
@@ -102,7 +126,17 @@ const info = new SlashCommandBuilder()
                 option
                     .setName('channel')
                     .setDescription('The channel where the message is located.')
-                    .setRequired(false))
+            )
+    )
+    .addSubcommand(subcommand =>
+        subcommand
+            .setName('show')
+            .setDescription('Shows existing reaction roles.')
+            .addStringOption(option =>
+                option
+                    .setName('message_id')
+                    .setDescription('The id of the message.')
+            )
     );
 
 module.exports = {
