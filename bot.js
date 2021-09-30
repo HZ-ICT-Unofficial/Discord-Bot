@@ -3,8 +3,6 @@ const commands = require('./util/command-loader');
 const reactionFunctions = require('./functions/reaction-functions');
 require('dotenv').config();
 
-// TODO: Memert (rimmert meme) command
-
 const client = new Discord.Client({
     intents: new Discord.Intents(32767),
     partials: ['MESSAGE', 'CHANNEL', 'REACTION']
