@@ -19,7 +19,7 @@
   "homepage": "https://github.com/HZ-ICT-Unofficial/Discord-Bot#readme",
   "dependencies": {
     "discord.js": "^13.1.0",
-    "dotenv": "^10.0.0"
+    "dotenv": "^10.0.0",
+    "random-puppy": "^1.1.0"
   }
-
 }
