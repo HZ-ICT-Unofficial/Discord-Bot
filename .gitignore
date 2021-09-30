@@ -4,7 +4,6 @@ data/reaction-messages.json
 \.vscode/
 yarn.lock
 yarn-error.log
-package-lock.json
 env/
 .env
 dev.env

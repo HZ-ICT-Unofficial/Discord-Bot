@@ -4,8 +4,7 @@ const commands = {}
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 for (const file of commandFiles) {
     const commandName = file.split(".js")[0].toLowerCase();
-    const command = require(`./commands/${file}`);
-    commands[commandName] = command;
+    commands[commandName] = require(`./commands/${file}`);
 }
 
 require("dotenv").config()
