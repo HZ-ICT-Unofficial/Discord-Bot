@@ -17,6 +17,8 @@ const findExistingReactions = (currentReactions, newReactionData) => {
 }
 
 const run = async (interaction) => {
+    const subcommand = interaction.options.getSubcommand(true);
+
     const messageId = interaction.options.getString('message_id', true);
     const role = interaction.options.getRole('role', true);
     const emoji = interaction.options.getString('emoji', true);
@@ -38,11 +40,14 @@ const run = async (interaction) => {
         channelId: channel.id
     }
 
-    if (!findExistingReactions(currentReactions, newReactionData)) {
+    if (subcommand === 'add' && !findExistingReactions(currentReactions, newReactionData)) {
         currentReactions.push(newReactionData);
         await jsonHandler.write(`${process.env.DATA_DIR}/reactions.json`, fileData);
         await message.react(emoji);
         await interaction.reply('Added new reaction role!');
+    } else if (subcommand === 'remove') {
+        await jsonHandler.remove(`${process.env.DATA_DIR}/reactions.json`, (storedReactionRole) => matchesReaction(storedReactionRole, newReactionData));
+        await interaction.reply('Removed reaction role!')
     } else {
         await interaction.reply('This reaction role already exists!');
     }
@@ -51,26 +56,56 @@ const run = async (interaction) => {
 const info = new SlashCommandBuilder()
     .setName('reactrole')
     .setDescription('Allows you to give roles based on reactions.')
-    .addStringOption(option =>
-        option
-            .setName('message_id')
-            .setDescription('The id of the message.')
-            .setRequired(true))
-    .addRoleOption(option =>
-        option
-            .setName('role')
-            .setDescription('The role given once someone reacts.')
-            .setRequired(true))
-    .addStringOption(option =>
-        option
-            .setName('emoji')
-            .setDescription('The emoji to react to.')
-            .setRequired(true))
-    .addChannelOption(option =>
-        option
-            .setName('channel')
-            .setDescription('The channel where the message is located.')
-            .setRequired(false));
+    .addSubcommand(subcommand =>
+        subcommand
+            .setName('add')
+            .setDescription('Adds a new reaction role.')
+            .addStringOption(option =>
+                option
+                    .setName('message_id')
+                    .setDescription('The id of the message.')
+                    .setRequired(true))
+            .addRoleOption(option =>
+                option
+                    .setName('role')
+                    .setDescription('The role given once someone reacts.')
+                    .setRequired(true))
+            .addStringOption(option =>
+                option
+                    .setName('emoji')
+                    .setDescription('The emoji to react to.')
+                    .setRequired(true))
+            .addChannelOption(option =>
+                option
+                    .setName('channel')
+                    .setDescription('The channel where the message is located.')
+                    .setRequired(false))
+    )
+    .addSubcommand(subcommand => 
+        subcommand
+            .setName('remove')
+            .setDescription('Removes an existing reaction role')
+            .addStringOption(option =>
+                option
+                    .setName('message_id')
+                    .setDescription('The id of the message.')
+                    .setRequired(true))
+            .addRoleOption(option =>
+                option
+                    .setName('role')
+                    .setDescription('The role given once someone reacts.')
+                    .setRequired(true))
+            .addStringOption(option =>
+                option
+                    .setName('emoji')
+                    .setDescription('The emoji to react to.')
+                    .setRequired(true))
+            .addChannelOption(option =>
+                option
+                    .setName('channel')
+                    .setDescription('The channel where the message is located.')
+                    .setRequired(false))
+    )
 
 module.exports = {
     run: run,
