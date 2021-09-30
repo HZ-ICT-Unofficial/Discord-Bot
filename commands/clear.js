@@ -20,7 +20,7 @@ const info = new SlashCommandBuilder()
         option
             .setName('message_count')
             .setDescription('The amount of messages to delete.')
-            .setRequired(true))
+            .setRequired(true));
 
 module.exports = {
     run: run,
