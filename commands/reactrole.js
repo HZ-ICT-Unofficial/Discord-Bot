@@ -31,7 +31,6 @@ const run = async (interaction) => {
     }
 
     const fileData = await jsonHandler.read(`${process.env.DATA_DIR}/reactions.json`);
-    const currentReactions = fileData.data;
 
     const newReactionData = {
         messageId: messageId,
@@ -40,9 +39,8 @@ const run = async (interaction) => {
         channelId: channel.id
     }
 
-    if (subcommand === 'add' && !findExistingReactions(currentReactions, newReactionData)) {
-        currentReactions.push(newReactionData);
-        await jsonHandler.write(`${process.env.DATA_DIR}/reactions.json`, fileData);
+    if (subcommand === 'add' && !findExistingReactions(fileData.data, newReactionData)) {
+        await jsonHandler.add(`${process.env.DATA_DIR}/reactions.json`, newReactionData, fileData);
         await message.react(emoji);
         await interaction.reply('Added new reaction role!');
     } else if (subcommand === 'remove') {
@@ -105,7 +103,7 @@ const info = new SlashCommandBuilder()
                     .setName('channel')
                     .setDescription('The channel where the message is located.')
                     .setRequired(false))
-    )
+    );
 
 module.exports = {
     run: run,

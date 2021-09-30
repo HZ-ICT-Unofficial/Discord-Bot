@@ -39,8 +39,10 @@ JSONHandler.findFirst = async (path, func, fileData) => {
     }
 }
 
-JSONHandler.add = async (path, newData) => {
-    const fileData = await JSONHandler.read(path);
+JSONHandler.add = async (path, newData, fileData) => {
+    if (!fileData) {
+        fileData = await JSONHandler.read(path);
+    }
     fileData.data.push(newData);
     await JSONHandler.write(path, fileData);
 }
