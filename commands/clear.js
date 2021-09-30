@@ -7,7 +7,8 @@ const run = async (interaction) => {
         const messageCount = Math.max(0, Math.min(99, rawMessageCount))
         const messages = await interaction.channel.messages.fetch({ limit: messageCount + 1 }).catch(silentError);
         if (messages) {
-            interaction.channel.bulkDelete(messages);
+            await interaction.reply(`Cleared ${messageCount} messages!`);
+            await interaction.channel.bulkDelete(messages);
         }
     }
 }
