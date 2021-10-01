@@ -1,17 +1,10 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const jsonHandler = require('../util/json-handler');
 const reactionsPath = `${process.env.DATA_DIR}/reactions.json`;
-const Discord = require('discord.js')
+const Discord = require('discord.js');
 
-const silentError = (err) => {
+const silentError = () => {
     return;
-}
-
-const matchesReaction = (reaction, newReactionData) => {
-    return reaction.messageId === newReactionData.messageId
-        && reaction.roleId === newReactionData.roleId
-        && reaction.emoji === newReactionData.emoji
-        && reaction.channelId === newReactionData.channelId;
 }
 
 const generateShowDescription = (reactionData) => {
@@ -41,14 +34,12 @@ const showReactionRoles = async (interaction) => {
     }
 
     const results = await jsonHandler.find(reactionsPath, reactionData);
-
     if (!results) {
         await interaction.reply('No results could be found!');
         return;
     }
 
     const fields = [];
-    
     await results.forEach(async (reactionRole) => {
         const role = await interaction.guild.roles.fetch(reactionRole.roleId);
         fields.push({
@@ -58,15 +49,15 @@ const showReactionRoles = async (interaction) => {
     });
     
     const description = generateShowDescription(reactionData);
-    const embed = new Discord.MessageEmbed()
-        .setColor('#717f80')
-        .setTitle(`Reaction Messages`)
-        .setDescription(description)
-        .addFields(fields);
+    const embed = new Discord.MessageEmbed({
+        color: '#717f80',
+        title: 'Reaction messages',
+        description: description,
+        fields: fields
+    });
     
     interaction.channel.send({embeds: [embed]}).catch(silentError);
     await interaction.reply('Showing results');
-    await interaction.deleteReply();
 }
 
 const addReactionRole = async (interaction) => {
@@ -105,6 +96,8 @@ const removeReactionRoles = async (interaction) => {
     const removedCount = await jsonHandler.remove(reactionsPath, reactionData);
     if (removedCount > 0) {
         await interaction.reply(`Removed ${removedCount} reaction roles!`);
+    } else {
+        await interaction.reply('Could not find any reaction roles to remove!');
     }
 }
 
