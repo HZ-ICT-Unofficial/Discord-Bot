@@ -63,29 +63,30 @@ const showExistingReactionRoles = async (interaction) => {
 
     const results = await jsonHandler.find(reactionsPath, reactionData);
 
-    if (results) {
-        const fields = [];
-        
-        await results.forEach(async (reactionRole) => {
-            const role = await interaction.guild.roles.fetch(reactionRole.roleId);
-            fields.push({
-                name: `${reactionRole.emoji} ${role.name}`,
-                value: `[Click to view message](https://discord.com/channels/${interaction.guild.id}/${reactionRole.channelId}/${reactionRole.messageId})`
-            });
-        });
-        
-        const description = generateShowDescription(reactionData);
-        const embed = new Discord.MessageEmbed()
-            .setColor('#717f80')
-            .setTitle(`Reaction Messages`)
-            .setDescription(description)
-            .addFields(fields);
-        
-        interaction.channel.send({embeds: [embed]}).catch(silentError);
-        await interaction.reply('Showing existing reaction roles.');
-    } else {
+    if (!results) {
         await interaction.reply('No results could be found!');
+        return;
     }
+
+    const fields = [];
+    
+    await results.forEach(async (reactionRole) => {
+        const role = await interaction.guild.roles.fetch(reactionRole.roleId);
+        fields.push({
+            name: `${reactionRole.emoji} ${role.name}`,
+            value: `[Click to view message](https://discord.com/channels/${interaction.guild.id}/${reactionRole.channelId}/${reactionRole.messageId})`
+        });
+    });
+    
+    const description = generateShowDescription(reactionData);
+    const embed = new Discord.MessageEmbed()
+        .setColor('#717f80')
+        .setTitle(`Reaction Messages`)
+        .setDescription(description)
+        .addFields(fields);
+    
+    interaction.channel.send({embeds: [embed]}).catch(silentError);
+    await interaction.reply('Showing existing reaction roles.');
 }
 
 const run = async (interaction) => {
