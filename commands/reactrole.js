@@ -21,20 +21,6 @@ const findExistingReactions = (currentReactions, newReactionData) => {
     return currentReactions.some(reaction => matchesReaction(reaction, newReactionData));
 }
 
-const filterReactions = (reactionRole, messageId, role, emoji, channel) => {
-    let isFound = true;
-    if (messageId && reactionRole.messageId !== messageId) {
-        isFound = false;
-    } else if (role && reactionRole.roleId !== role.id) {
-        isFound = false;
-    } else if (emoji && reactionRole.emoji !== emoji) {
-        isFound = false;
-    } else if (channel && reactionRole.channelId !== channel.id) {
-        isFound = false;
-    }
-    return isFound;
-}
-
 const generateShowDescription = (reactionData) => {
     let description = 'Showing reaction roles';
     if (reactionData.messageId) {
@@ -53,7 +39,7 @@ const generateShowDescription = (reactionData) => {
     return description;
 }
 
-const showExistingReactionRoles = async (interaction) => {
+const showReactionRoles = async (interaction) => {
     const reactionData = {
         messageId: interaction.options.getString('message_id', false),
         emoji: interaction.options.getRole('role', false),
@@ -89,44 +75,55 @@ const showExistingReactionRoles = async (interaction) => {
     await interaction.reply('Showing existing reaction roles.');
 }
 
-const run = async (interaction) => {
-    const subcommand = interaction.options.getSubcommand(true);
-
-    if (subcommand === 'show') {
-        await showExistingReactionRoles(interaction);
-        return;
-    }
-
-    const messageId = interaction.options.getString('message_id', true);
-    const role = interaction.options.getRole('role', true);
-    const emoji = interaction.options.getString('emoji', true);
+const addReactionRole = async (interaction) => {
     const channel = interaction.options.getChannel('channel', false) || interaction.channel;
 
-    const message = await channel.messages.fetch(messageId).catch(silentError);
+    const newReactionData = {
+        messageId: interaction.options.getString('message_id', true),
+        emoji: interaction.options.getString('emoji', true),
+        roleId: interaction.options.getRole('role', true).id,
+        channelId: channel.id
+    }
+
+    const message = await channel.messages.fetch(newReactionData.messageId).catch(silentError);
     if (!message) {
         await interaction.reply('The message could not be found!');
         return;
     }
 
-    const fileData = await jsonHandler.read(reactionsPath);
-
-    const newReactionData = {
-        messageId: messageId,
-        emoji: emoji,
-        roleId: role.id,
-        channelId: channel.id
-    }
-
-    if (subcommand === 'add' && !findExistingReactions(fileData.data, newReactionData)) {
-        await jsonHandler.add(reactionsPath, newReactionData, fileData);
+    if (!jsonHandler.find(reactionsPath, newReactionData)) {
+        await jsonHandler.add(reactionsPath, newReactionData);
         await message.react(emoji);
         await interaction.reply('Added new reaction role!');
-    } else if (subcommand === 'remove') {
-        await jsonHandler.remove(reactionsPath, (storedReactionRole) => matchesReaction(storedReactionRole, newReactionData));
-        await interaction.reply('Removed reaction role!')
     } else {
         await interaction.reply('This reaction role already exists!');
     }
+}
+
+const removeReactionRoles = async (interaction) => {
+    const reactionData = {
+        messageId: interaction.options.getString('message_id', false),
+        emoji: interaction.options.getRole('role', false),
+        role: interaction.options.getString('emoji', false),
+        channel: interaction.options.getChannel('channel', false)
+    }
+
+    const removedCount = await jsonHandler.remove(reactionsPath, reactionData);
+    if (removedCount > 0) {
+        await interaction.reply(`Removed ${removedCount} reaction roles!`);
+    }
+}
+
+const subcommands = {
+    'show': showReactionRoles,
+    'add': addReactionRole,
+    'remove': removeReactionRoles
+}
+
+const run = async (interaction) => {
+    const subcommandName = interaction.options.getSubcommand(true);
+    const subcommand = subcommands[subcommandName];
+    await subcommand(interaction);
 }
 
 const info = new SlashCommandBuilder()

@@ -99,9 +99,11 @@ JSONHandler.remove = async (path, target, fileData) => {
             const index = fileData.data.indexOf(result);
             fileData.data.splice(index, 1);
         });
+        await JSONHandler.write(path, fileData);
+
+        return results.length;
     }
-    
-    await JSONHandler.write(path, fileData);
+    return 0;
 }
 
 module.exports = JSONHandler;
