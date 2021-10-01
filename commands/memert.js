@@ -46,7 +46,9 @@ const validateImage = async (url) => {
 
 const addMemert = async (interaction, memertUrl) => {
     const urlPrefix = `https://cdn.discordapp.com/attachments/${memeChannelId}/`;
+    const mobileUrlPrefix = `https://media.discordapp.net/attachments/${memeChannelId}/`;
     memertUrl = memertUrl.replace(urlPrefix, '');
+    memertUrl = memertUrl.replace(mobileUrlPrefix, '');
     const parts = memertUrl.split('/');
 
     const messageIdMatch = parts[0].match(/([0-9]+)/);
