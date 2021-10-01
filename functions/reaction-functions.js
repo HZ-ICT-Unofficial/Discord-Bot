@@ -2,17 +2,18 @@ const jsonHandler = require('../util/json-handler');
 const silentError = require('../util/silent-error');
 
 const reactionFunctions = {};
+const reactionsPath = `${process.env.DATA_DIR}/reactions.json`;
 
 const verifyReactionRole = async (client, messageReaction, reactionRole) => {
     const reactionChannel = await client.channels.fetch(reactionRole.channelId).catch(() => {
-        jsonHandler.remove(`${process.env.DATA_DIR}/reactions.json`, (storedReactionRole) => storedReactionRole.channelId === reactionRole.channelId);
+        jsonHandler.remove(reactionsPath, (storedReactionRole) => storedReactionRole.channelId === reactionRole.channelId);
     });
     if (!reactionChannel) {
         return false;
     }
 
     const reactionMessage = await reactionChannel.messages.fetch(reactionRole.messageId).catch(() => {
-        jsonHandler.remove(`${process.env.DATA_DIR}/reactions.json`, (storedReactionRole) => storedReactionRole.messageId === reactionRole.messageId);
+        jsonHandler.remove(reactionsPath, (storedReactionRole) => storedReactionRole.messageId === reactionRole.messageId);
     });
     if (!reactionMessage) {
         return false;
@@ -59,7 +60,7 @@ reactionFunctions.onMessageReactionAdded = async (client, messageReaction, user)
         return;
     }
 
-    const fileData = await jsonHandler.read(`${process.env.DATA_DIR}/reactions.json`);
+    const fileData = await jsonHandler.read(reactionsPath);
     fileData.data.forEach(async (reactionRole) => {
         giveReactionRole(client, messageReaction, user, reactionRole);
     });
@@ -70,15 +71,20 @@ reactionFunctions.onMessageReactionRemoved = async (client, messageReaction, use
         return;
     }
 
-    const reactionRole = await jsonHandler.findFirst(`${process.env.DATA_DIR}/reactions.json`, (storedReactionRole) => {
-        return storedReactionRole.messageId === messageReaction.message.id
-            && storedReactionRole.channelId === messageReaction.message.channelId
-            && storedReactionRole.emoji === messageReaction.emoji.name;
-    });
-    
-    if (reactionRole) {
-        revokeReactionRole(client, messageReaction, user, reactionRole);
+    const reactionData = {
+        messageId: messageReaction.message.id,
+        emoji: messageReaction.emoji.name,
+        channel: messageReaction.message.channelId
     }
+
+    const reactionRoles = await jsonHandler.find(reactionsPath, reactionData);
+    if (reactionRoles.length === 0) {
+        return;
+    }
+
+    reactionRoles.forEach((reactionRole) => {
+        revokeReactionRole(client, messageReaction, user, reactionRole);
+    });
 }
 
 module.exports = reactionFunctions;
