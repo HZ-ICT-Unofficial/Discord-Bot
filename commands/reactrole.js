@@ -123,7 +123,11 @@ const subcommands = {
 const run = async (interaction) => {
     const subcommandName = interaction.options.getSubcommand(true);
     const subcommand = subcommands[subcommandName];
-    await subcommand(interaction);
+    if (subcommand) {
+        await subcommand(interaction);
+    } else {
+        throw new Error(`Did you forget to add a subcommand? Failed to run ${subcommandName}!`)
+    }
 }
 
 const info = new SlashCommandBuilder()
@@ -162,17 +166,17 @@ const info = new SlashCommandBuilder()
                 option
                     .setName('message_id')
                     .setDescription('The id of the message.')
-                    .setRequired(true))
+            )
             .addRoleOption(option =>
                 option
                     .setName('role')
                     .setDescription('The role given once someone reacts.')
-                    .setRequired(true))
+            )
             .addStringOption(option =>
                 option
                     .setName('emoji')
                     .setDescription('The emoji to react to.')
-                    .setRequired(true))
+            )
             .addChannelOption(option =>
                 option
                     .setName('channel')
