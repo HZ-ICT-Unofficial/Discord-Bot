@@ -43,6 +43,8 @@ const showExistingReactionRoles = async (interaction) => {
 
             return someBoolean;
         }, fileData);
+
+        
         if (results) {
             const fields = []
             await results.forEach(async (reactionRole) => {
@@ -50,9 +52,9 @@ const showExistingReactionRoles = async (interaction) => {
                 fields.push({name: `${role.name}`, value: `Message ID: ${reactionRole.messageId} \nRole ID: ${reactionRole.roleId} \nEmoji: ${reactionRole.emoji}`})
             })
             const embed = new Discord.MessageEmbed()
-                .setColor("#717f80")
+                .setColor('#717f80')
                 .setTitle(`Reaction Messages for ${interaction.channel.name}`)
-                .setDescription("A list of all the Reaction Messages that have been created here in the server:")
+                .setDescription('A list of all the Reaction Messages that have been created here in the server:')
                 .addFields(fields)
             
             interaction.channel.send({embeds: [embed]})
