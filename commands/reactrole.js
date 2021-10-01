@@ -21,6 +21,24 @@ const findExistingReactions = (currentReactions, newReactionData) => {
     return currentReactions.some(reaction => matchesReaction(reaction, newReactionData));
 }
 
+const generateShowDescription = (messageId, role, emoji, channel) => {
+    let description = 'Showing reaction roles';
+    if (messageId) {
+        description += ` with a message id of ${messageId}.`;
+    }
+    if (role) {
+        description += ` with the ${role.name} role.`;
+    }
+    if (emoji) {
+        description += ` with the ${emoji.name} emoji.`;
+    }
+    if (channel) {
+        description += ` within the ${channel.name} channel.`;
+    }
+
+    return description;
+}
+
 const showExistingReactionRoles = async (interaction) => {
     const messageId = interaction.options.getString('message_id', false);
     const role = interaction.options.getRole('role', false);
@@ -28,53 +46,60 @@ const showExistingReactionRoles = async (interaction) => {
     const channel = interaction.options.getChannel('channel', false);
 
     const fileData = await jsonHandler.read(reactionsPath);
-    if (messageId) {
-        const results = await jsonHandler.find(reactionsPath, (reactionRole) => {
-            let someBoolean = true;
-            if (messageId && reactionRole.messageId !== messageId) {
-                someBoolean = false;
-            } else if (role && reactionRole.roleId !== role.id) {
-                someBoolean = false;
-            } else if (emoji && reactionRole.emoji !== emoji) {
-                someBoolean = false;
-            } else if (channel && reactionRole.channelId !== channel.id) {
-                someBoolean = false;
-            }
-
-            return someBoolean;
-        }, fileData);
-
-        
-        if (results) {
-            const fields = []
-            await results.forEach(async (reactionRole) => {
-                const role = await interaction.guild.roles.fetch(reactionRole.roleId)
-                fields.push({name: `${role.name}`, value: `Message ID: [${reactionRole.messageId}](https://discord.com/channels/${interaction.guild.id}/${reactionRole.channelId}/${reactionRole.messageId}) \nRole ID: ${reactionRole.roleId} \nEmoji: ${reactionRole.emoji}`})
-            })
-            const embed = new Discord.MessageEmbed()
-                .setColor('#717f80')
-                .setTitle(`Reaction Messages for ${interaction.channel.name}`)
-                .setDescription('A list of all the Reaction Messages that have been created here in the server:')
-                .addFields(fields)
-            
-            interaction.channel.send({embeds: [embed]})
+    const results = await jsonHandler.find(reactionsPath, (reactionRole) => {
+        let someBoolean = true;
+        if (messageId && reactionRole.messageId !== messageId) {
+            someBoolean = false;
+        } else if (role && reactionRole.roleId !== role.id) {
+            someBoolean = false;
+        } else if (emoji && reactionRole.emoji !== emoji) {
+            someBoolean = false;
+        } else if (channel && reactionRole.channelId !== channel.id) {
+            someBoolean = false;
         }
-    } else {
-        const fields = []
-        const results = await jsonHandler.find(reactionsPath, (reactionRole) => reactionRole.channelId === interaction.channel.id, fileData);
-        await results.forEach(async (reactionRole) => {
-            const role = await interaction.guild.roles.fetch(reactionRole.roleId)
-            fields.push({name: `${role.name}`, value: `Message ID: [${reactionRole.messageId}](https://discord.com/channels/${interaction.guild.id}/${reactionRole.channelId}/${reactionRole.messageId}) \nRole ID: ${reactionRole.roleId} \nEmoji: ${reactionRole.emoji}`})
-        })
-        const embed = new Discord.MessageEmbed()
-            .setColor("#717f80")
-            .setTitle(`Reaction Messages for ${interaction.channel.name}`)
-            .setDescription("A list of all the Reaction Messages that have been created here in the server:")
-            .addFields(fields)
+        return someBoolean;
+    }, fileData);
+
+    const description = generateShowDescription(messageId, role, emoji, channel);
+
+    if (results) {
+        const fields = [];
         
-        interaction.channel.send({embeds: [embed]})
+        results.forEach(async (reactionRole) => {
+            const role = await interaction.guild.roles.fetch(reactionRole.roleId);
+            fields.push({
+                name: `${role.name}`,
+                value: `Message ID: [${reactionRole.messageId}](https://discord.com/channels/${interaction.guild.id}/${reactionRole.channelId}/${reactionRole.messageId})\n
+                        Role ID: ${reactionRole.roleId}\n
+                        Emoji: ${reactionRole.emoji}`
+            });
+        });
+
+        const embed = new Discord.MessageEmbed()
+            .setColor('#717f80')
+            .setTitle(`Reaction Messages`)
+            .setDescription(description)
+            .addFields(fields);
+        
+        interaction.channel.send({embeds: [embed]}).catch(silentError);
+        await interaction.reply('Showing existing reaction roles.');
+    } else {
+        await interaction.reply('No results could be found!');
     }
-    await interaction.reply('Showing existing reaction roles');
+
+    // const fields = []
+    // const results = await jsonHandler.find(reactionsPath, (reactionRole) => reactionRole.channelId === interaction.channel.id, fileData);
+    // await results.forEach(async (reactionRole) => {
+    //     const role = await interaction.guild.roles.fetch(reactionRole.roleId)
+    //     fields.push({name: `${role.name}`, value: `Message ID: [${reactionRole.messageId}](https://discord.com/channels/${interaction.guild.id}/${reactionRole.channelId}/${reactionRole.messageId}) \nRole ID: ${reactionRole.roleId} \nEmoji: ${reactionRole.emoji}`})
+    // })
+    // const embed = new Discord.MessageEmbed()
+    //     .setColor("#717f80")
+    //     .setTitle(`Reaction Messages for ${interaction.channel.name}`)
+    //     .setDescription("A list of all the Reaction Messages that have been created here in the server:")
+    //     .addFields(fields)
+    
+    // interaction.channel.send({embeds: [embed]})
 }
 
 const run = async (interaction) => {
