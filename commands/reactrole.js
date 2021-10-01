@@ -7,18 +7,11 @@ const silentError = (err) => {
     return;
 }
 
-// TODO: Fix removing multiple roles at once from the same emoji.
-// (Giving already works)
-
 const matchesReaction = (reaction, newReactionData) => {
     return reaction.messageId === newReactionData.messageId
         && reaction.roleId === newReactionData.roleId
         && reaction.emoji === newReactionData.emoji
         && reaction.channelId === newReactionData.channelId;
-}
-
-const findExistingReactions = (currentReactions, newReactionData) => {
-    return currentReactions.some(reaction => matchesReaction(reaction, newReactionData));
 }
 
 const generateShowDescription = (reactionData) => {
@@ -72,7 +65,8 @@ const showReactionRoles = async (interaction) => {
         .addFields(fields);
     
     interaction.channel.send({embeds: [embed]}).catch(silentError);
-    await interaction.reply('Showing existing reaction roles.');
+    await interaction.reply('Showing results');
+    await interaction.deleteReply();
 }
 
 const addReactionRole = async (interaction) => {
