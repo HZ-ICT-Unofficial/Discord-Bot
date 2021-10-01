@@ -76,7 +76,8 @@ const addReactionRole = async (interaction) => {
         return;
     }
 
-    if (!jsonHandler.find(reactionsPath, newReactionData)) {
+    const results = await jsonHandler.find(reactionsPath, newReactionData);
+    if (results.length === 0) {
         await jsonHandler.add(reactionsPath, newReactionData);
         await message.react(emoji);
         await interaction.reply('Added new reaction role!');

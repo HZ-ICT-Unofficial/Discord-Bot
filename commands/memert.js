@@ -57,24 +57,18 @@ const addMemert = async (interaction, memertUrl) => {
         return;
     }
     const messageId = messageIdMatch[1];
+    const rawFilePath = parts[1];
+    const filePath = rawFilePath.replace(/\?.*/, '');
 
-    const filePath = parts[1];
-    const fileParts = filePath.split('.');
-    const fileName = fileParts[0];
-    const fileType = fileParts[1];
-    if (!fileName || !fileType || fileName.length === 0 || fileType.length === 0) {
-        await interaction.reply('Invalid memert url provided.');
-        return;
-    }
-
-    const finalUrl = `${urlPrefix}${messageId}/${fileName}.${fileType}`;
+    const finalUrl = `${urlPrefix}${messageId}/${filePath}`;
     const finalCheck = await validateImage(finalUrl);
     if (finalCheck) {
-        if (!jsonHandler.find(memeStorage, finalUrl)) {
+        const results = await jsonHandler.find(memeStorage, finalUrl);
+        if (results.length === 0) {
             await jsonHandler.add(memeStorage, finalUrl);
             await interaction.reply('Added new memert to the collection!');
         } else {
-            await interaction.reply('Memert already exists in the collection!');
+            await interaction.reply('This memert already exists in the collection!');
         }
     } else {
         await interaction.reply('Invalid memert url provided.');
