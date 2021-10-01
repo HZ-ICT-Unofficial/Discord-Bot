@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const jsonHandler = require('../util/json-handler');
 const reactionsPath = `${process.env.DATA_DIR}/reactions.json`;
+const Discord = require('discord.js')
 
 const silentError = (err) => {
     return;
@@ -43,12 +44,33 @@ const showExistingReactionRoles = async (interaction) => {
             return someBoolean;
         }, fileData);
         if (results) {
-            console.log(results);
-            // TODO: Show these in an embed
+            const fields = []
+            await results.forEach(async (reactionRole) => {
+                const role = await interaction.guild.roles.fetch(reactionRole.roleId)
+                fields.push({name: `${role.name}`, value: `Message ID: ${reactionRole.messageId} \nRole ID: ${reactionRole.roleId} \nEmoji: ${reactionRole.emoji}`})
+            })
+            const embed = new Discord.MessageEmbed()
+                .setColor("#717f80")
+                .setTitle(`Reaction Messages for ${interaction.channel.name}`)
+                .setDescription("A list of all the Reaction Messages that have been created here in the server:")
+                .addFields(fields)
+            
+            interaction.channel.send({embeds: [embed]})
         }
     } else {
-        // TODO: Show these in an embed
-        console.log(fileData.data);
+        const fields = []
+        const results = await jsonHandler.find(reactionsPath, (reactionRole) => reactionRole.channelId === interaction.channel.id, fileData);
+        await results.forEach(async (reactionRole) => {
+            const role = await interaction.guild.roles.fetch(reactionRole.roleId)
+            fields.push({name: `${role.name}`, value: `Message ID: ${reactionRole.messageId} \nRole ID: ${reactionRole.roleId} \nEmoji: ${reactionRole.emoji}`})
+        })
+        const embed = new Discord.MessageEmbed()
+            .setColor("#717f80")
+            .setTitle(`Reaction Messages for ${interaction.channel.name}`)
+            .setDescription("A list of all the Reaction Messages that have been created here in the server:")
+            .addFields(fields)
+        
+        interaction.channel.send({embeds: [embed]})
     }
     await interaction.reply('Showing existing reaction roles');
 }
