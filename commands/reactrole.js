@@ -5,6 +5,7 @@ const reactionsPath = `${process.env.DATA_DIR}/reactions.json`;
 const silentError = (err) => {
     return;
 }
+
 // TODO: Fix removing multiple roles at once from the same emoji.
 // (Giving already works)
 
@@ -21,9 +22,26 @@ const findExistingReactions = (currentReactions, newReactionData) => {
 
 const showExistingReactionRoles = async (interaction) => {
     const messageId = interaction.options.getString('message_id', false);
+    const role = interaction.options.getRole('role', false);
+    const emoji = interaction.options.getString('emoji', false);
+    const channel = interaction.options.getChannel('channel', false);
+
     const fileData = await jsonHandler.read(reactionsPath);
     if (messageId) {
-        const results = await jsonHandler.find(reactionsPath, (reactionRole) => reactionRole.messageId === messageId, fileData);
+        const results = await jsonHandler.find(reactionsPath, (reactionRole) => {
+            let someBoolean = true;
+            if (messageId && reactionRole.messageId !== messageId) {
+                someBoolean = false;
+            } else if (role && reactionRole.roleId !== role.id) {
+                someBoolean = false;
+            } else if (emoji && reactionRole.emoji !== emoji) {
+                someBoolean = false;
+            } else if (channel && reactionRole.channelId !== channel.id) {
+                someBoolean = false;
+            }
+
+            return someBoolean;
+        }, fileData);
         if (results) {
             console.log(results);
             // TODO: Show these in an embed
@@ -46,7 +64,7 @@ const run = async (interaction) => {
     const messageId = interaction.options.getString('message_id', true);
     const role = interaction.options.getRole('role', true);
     const emoji = interaction.options.getString('emoji', true);
-    const channel = interaction.options.getChannel('channel_id', false) || interaction.channel;
+    const channel = interaction.options.getChannel('channel', false) || interaction.channel;
 
     const message = await channel.messages.fetch(messageId).catch(silentError);
     if (!message) {
@@ -135,7 +153,22 @@ const info = new SlashCommandBuilder()
             .addStringOption(option =>
                 option
                     .setName('message_id')
-                    .setDescription('The id of the message.')
+                    .setDescription('The message id of the reaction role.')
+            )
+            .addStringOption(option =>
+                option
+                    .setName('emoji')
+                    .setDescription('The emoji of a reaction role.')
+            )
+            .addRoleOption(option =>
+                option
+                    .setName('role')
+                    .setDescription('The role of a reaction role.')
+            )
+            .addChannelOption(option =>
+                option
+                    .setName('channel')
+                    .setDescription('The channel the reaction role is in.')
             )
     );
 
