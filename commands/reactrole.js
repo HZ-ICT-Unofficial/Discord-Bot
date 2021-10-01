@@ -49,7 +49,7 @@ const showExistingReactionRoles = async (interaction) => {
             const fields = []
             await results.forEach(async (reactionRole) => {
                 const role = await interaction.guild.roles.fetch(reactionRole.roleId)
-                fields.push({name: `${role.name}`, value: `Message ID: ${reactionRole.messageId} \nRole ID: ${reactionRole.roleId} \nEmoji: ${reactionRole.emoji}`})
+                fields.push({name: `${role.name}`, value: `Message ID: [${reactionRole.messageId}](https://discord.com/channels/${interaction.guild.id}/${reactionRole.channelId}/${reactionRole.messageId}) \nRole ID: ${reactionRole.roleId} \nEmoji: ${reactionRole.emoji}`})
             })
             const embed = new Discord.MessageEmbed()
                 .setColor('#717f80')
@@ -64,7 +64,7 @@ const showExistingReactionRoles = async (interaction) => {
         const results = await jsonHandler.find(reactionsPath, (reactionRole) => reactionRole.channelId === interaction.channel.id, fileData);
         await results.forEach(async (reactionRole) => {
             const role = await interaction.guild.roles.fetch(reactionRole.roleId)
-            fields.push({name: `${role.name}`, value: `Message ID: ${reactionRole.messageId} \nRole ID: ${reactionRole.roleId} \nEmoji: ${reactionRole.emoji}`})
+            fields.push({name: `${role.name}`, value: `Message ID: [${reactionRole.messageId}](https://discord.com/channels/${interaction.guild.id}/${reactionRole.channelId}/${reactionRole.messageId}) \nRole ID: ${reactionRole.roleId} \nEmoji: ${reactionRole.emoji}`})
         })
         const embed = new Discord.MessageEmbed()
             .setColor("#717f80")
