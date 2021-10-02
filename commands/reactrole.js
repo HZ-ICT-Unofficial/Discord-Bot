@@ -25,13 +25,20 @@ const generateShowDescription = (reactionData) => {
     return description;
 }
 
-const showReactionRoles = async (interaction) => {
-    const reactionData = {
+const getOptionalReactionData = (interaction) => {
+    const role = interaction.options.getString('emoji', false);
+    const channel = interaction.options.getChannel('channel', false);
+
+    return {
         messageId: interaction.options.getString('message_id', false),
         emoji: interaction.options.getRole('role', false),
-        role: interaction.options.getString('emoji', false),
-        channel: interaction.options.getChannel('channel', false)
+        roleId: role ? role.id : null,
+        channelId: channel ? channel.id : null
     }
+}
+
+const showReactionRoles = async (interaction) => {
+    const reactionData = getOptionalReactionData(interaction);
 
     const results = await jsonHandler.find(reactionsPath, reactionData);
     if (!results) {
@@ -79,24 +86,46 @@ const addReactionRole = async (interaction) => {
     const results = await jsonHandler.find(reactionsPath, newReactionData);
     if (results.length === 0) {
         await jsonHandler.add(reactionsPath, newReactionData);
-        await message.react(emoji);
+        await message.react(newReactionData.emoji);
         await interaction.reply('Added new reaction role!');
     } else {
         await interaction.reply('This reaction role already exists!');
     }
 }
 
-const removeReactionRoles = async (interaction) => {
-    const reactionData = {
-        messageId: interaction.options.getString('message_id', false),
-        emoji: interaction.options.getRole('role', false),
-        role: interaction.options.getString('emoji', false),
-        channel: interaction.options.getChannel('channel', false)
+const findMessageByReactionRole = async (interaction, reactionRole) => {
+    const channel = await interaction.guild.channels.fetch(reactionRole.channelId).catch(silentError);
+    if (!channel) {
+        return;
     }
 
-    const removedCount = await jsonHandler.remove(reactionsPath, reactionData);
-    if (removedCount > 0) {
-        await interaction.reply(`Removed ${removedCount} reaction roles!`);
+    const message = await channel.messages.fetch(reactionRole.messageId).catch(silentError);
+    if (message) {
+        return message;
+    }
+}
+
+const removeEmojis = async (interaction, reactionRoles) => {
+    // TODO: Fix the removal of emojis once a reaction role is removed, and clean this up.
+    await reactionRoles.forEach(async (reactionRole) => {
+        const message = await findMessageByReactionRole(interaction, reactionRole);
+        if (message) {
+            const reaction = message.reactions.resolve(reactionRole.emoji);
+            console.log(reaction);
+            if (reaction) {
+                await reaction.users.remove(interaction.client).catch(silentError);
+            }
+        }
+    });
+}
+
+const removeReactionRoles = async (interaction) => {
+    const reactionData = getOptionalReactionData(interaction);
+
+    const foundReactionRoles = await jsonHandler.remove(reactionsPath, reactionData);
+    if (foundReactionRoles.length > 0) {
+        await removeEmojis(interaction, foundReactionRoles);
+        await interaction.reply(`Removed ${foundReactionRoles.length} reaction roles!`);
     } else {
         await interaction.reply('Could not find any reaction roles to remove!');
     }
