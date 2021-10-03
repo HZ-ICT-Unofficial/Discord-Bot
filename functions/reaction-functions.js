@@ -41,10 +41,13 @@ const getMemberInfo = async (messageReaction, user, reactionRole) => {
 
 const giveReactionRole = async (client, messageReaction, user, reactionRole) => {
     const verified = await verifyReactionRole(client, messageReaction, reactionRole);
-    if (verified) {
-        const memberInfo = await getMemberInfo(messageReaction, user, reactionRole);
+    if (!verified) {
+        return;
+    }
+    const memberInfo = await getMemberInfo(messageReaction, user, reactionRole);
+    if (memberInfo.member && memberInfo.role) {
         memberInfo.member.roles.add(memberInfo.role);
-    }    
+    }
 }
 
 const revokeReactionRole = async (client, messageReaction, user, reactionRole) => {
