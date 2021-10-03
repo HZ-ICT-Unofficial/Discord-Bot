@@ -45,7 +45,7 @@ const giveReactionRole = async (client, messageReaction, user, reactionRole) => 
         return;
     }
     const memberInfo = await getMemberInfo(messageReaction, user, reactionRole);
-    if (memberInfo.member && memberInfo.role) {
+    if (memberInfo) {
         memberInfo.member.roles.add(memberInfo.role);
     }
 }
