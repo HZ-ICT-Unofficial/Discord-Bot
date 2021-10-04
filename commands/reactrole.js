@@ -63,10 +63,19 @@ const getOptionalReactionData = (interaction) => {
     }
 }
 
+const createReactionRole = (interaction, channel) => {
+    return {
+        messageId: interaction.options.getString('message_id', true),
+        emoji: interaction.options.getString('emoji', true),
+        roleId: interaction.options.getRole('role', true).id,
+        channelId: channel.id
+    }
+}
+
 const showReactionRoles = async (interaction) => {
     const reactionData = getOptionalReactionData(interaction);
     
-    const results = await jsonHandler.find(reactionsPath, reactionData);
+    const results = await jsonHandler.query(reactionsPath, reactionData);
     const description = generateDescription(interaction, reactionData, results);
     
     const embed = new Discord.MessageEmbed({
@@ -81,24 +90,18 @@ const showReactionRoles = async (interaction) => {
 
 const addReactionRole = async (interaction) => {
     const channel = interaction.options.getChannel('channel', false) || interaction.channel;
+    const newReactionRole = createReactionRole(interaction, channel);
 
-    const newReactionData = {
-        messageId: interaction.options.getString('message_id', true),
-        emoji: interaction.options.getString('emoji', true),
-        roleId: interaction.options.getRole('role', true).id,
-        channelId: channel.id
-    }
-
-    const message = await channel.messages.fetch(newReactionData.messageId).catch(silentError);
+    const message = await channel.messages.fetch(newReactionRole.messageId).catch(silentError);
     if (!message) {
         await interaction.reply('The message could not be found!');
         return;
     }
 
-    const results = await jsonHandler.find(reactionsPath, newReactionData);
+    const results = await jsonHandler.find(reactionsPath, newReactionRole);
     if (results.length === 0) {
-        await jsonHandler.add(reactionsPath, newReactionData);
-        await message.react(newReactionData.emoji);
+        await jsonHandler.add(reactionsPath, newReactionRole);
+        await message.react(newReactionRole.emoji);
         await interaction.reply('Added new reaction role!');
     } else {
         await interaction.reply('This reaction role already exists!');

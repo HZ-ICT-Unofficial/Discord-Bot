@@ -2,41 +2,54 @@ const fs = require('fs');
 
 const JSONHandler = {}
 
-const matchingValues = (firstValue, secondValue) => {
+const areSimilarArrays = (arrayA, arrayB) => {
+    if (firstValue.length !== secondValue.length) {
+        return false;
+    }
+    for (let i = 0; i < arrayA.length; i++) {
+        if (!areSimilarValues(arrayA[i], arrayB[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+const areSimilarObjects = (objectA, objectB) => {
+    const keys = Object.keys(objectA);
+    for (let i = 0; i < keys.length; i++) {
+        const currentKey = keys[i];
+        const valueA = objectA[currentKey];
+        const valueB = objectB[currentKey];
+        if (valueA && valueB && !areSimilarValues(valueA, valueB)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+const areSimilarValues = (firstValue, secondValue) => {
     if (typeof firstValue !== typeof secondValue) {
         return false;
     } else if (firstValue === secondValue) {
         return true;
-    } else if (typeof firstValue !== 'object') {
-        return false;
+    } else if (typeof firstValue === 'function') {
+        throw new Error('Functions are not supported');
     }
-
     if (!Array.isArray(firstValue)) {
-        const keys = Object.keys(firstValue);
-        let isMatching = true;
-        for (let i = 0; i < keys.length; i++) {
-            const currentKey = keys[i];
-            const valueA = firstValue[currentKey];
-            const valueB = secondValue[currentKey];
-
-            if (valueA && valueB && !matchingValues(valueA, valueB)) {
-                isMatching = false;
-                break;
-            }
-        }
-        return isMatching;
-    } else {
-        let isMatching = true;
-        for (let i = 0; i < firstValue.length; i++) {
-            const valueA = firstValue[i];
-            const valueB = secondValue[i];
-            if (!matchingValues(valueA, valueB)) {
-                isMatching = false;
-                break;
-            }
-        }
-        return isMatching;
+        return areSimilarObjects(firstValue, secondValue);
     }
+    return areSimilarArrays(firstValue, secondValue);
+}
+
+const areEqual = (firstValue, secondValue) => {
+    if (typeof firstValue !== typeof secondValue) {
+        return false;
+    } else if (firstValue === secondValue) {
+        return true;
+    } else if (typeof firstValue === 'function') {
+        throw new Error('Functions are not supported');
+    }
+    return JSON.stringify(firstValue) === JSON.stringify(secondValue);
 }
 
 JSONHandler.read = (path) => {
@@ -69,15 +82,12 @@ JSONHandler.filter = async (path, func, fileData) => {
     return fileData.data.filter(func);
 }
 
-JSONHandler.find = async (path, targetValue, fileData) => {
-    return JSONHandler.filter(path, (existingValue) => matchingValues(existingValue, targetValue), fileData);
+JSONHandler.query = async (path, targetValue, fileData) => {
+    return JSONHandler.filter(path, (existingValue) => areSimilarValues(existingValue, targetValue), fileData);
 }
 
-JSONHandler.findFirst = async (path, targetValue, fileData) => {
-    const results = await JSONHandler.find(path, targetValue, fileData);
-    if (results) {
-        return results[0];
-    }
+JSONHandler.find = async (path, targetValue, fileData) => {
+    return JSONHandler.filter(path, (existingValue) => areEqual(existingValue, targetValue), fileData);
 }
 
 JSONHandler.add = async (path, newData, fileData) => {
@@ -86,6 +96,15 @@ JSONHandler.add = async (path, newData, fileData) => {
     }
     fileData.data.push(newData);
     await JSONHandler.write(path, fileData);
+}
+
+JSONHandler.addUnique = async (path, newData, fileData) => {
+    const results = await JSONHandler.find(path, newData, fileData);
+    if (results.length > 0) {
+        return false;
+    }
+    await JSONHandler.add(path, newData, fileData);
+    return true;
 }
 
 JSONHandler.remove = async (path, target, fileData) => {

@@ -5,6 +5,8 @@ const jsonHandler = require('../util/json-handler');
 
 const memeStorage = `${process.env.DATA_DIR}/illegal-memes.json`;
 const memeChannelId = '887998241210245151';
+const urlPrefix = `https://cdn.discordapp.com/attachments/${memeChannelId}/`;
+const mobileUrlPrefix = `https://media.discordapp.net/attachments/${memeChannelId}/`;
 
 const generateRandomInt = (min, max) => {
     return Math.floor(min + Math.random() * (max - min));
@@ -14,7 +16,8 @@ const pickRandomMemert = async () => {
     const fileData = await jsonHandler.read(memeStorage);
     const max = fileData.data.length;
     const randomIndex = generateRandomInt(0, max);
-    return fileData.data[randomIndex];
+    const selectedMemert = fileData.data[randomIndex];
+    return `${urlPrefix}${selectedMemert}`;
 }
 
 const generateMemertEmbed = (url) => {
@@ -44,31 +47,42 @@ const validateImage = async (url) => {
     }
 }
 
-const addMemert = async (interaction, memertUrl) => {
-    const urlPrefix = `https://cdn.discordapp.com/attachments/${memeChannelId}/`;
-    const mobileUrlPrefix = `https://media.discordapp.net/attachments/${memeChannelId}/`;
+const validateMemertUrl = async (interaction, memertUrl) => {
+    if (typeof memertUrl !== 'string' || memertUrl.length === 0) {
+        return false;
+    }
+    
     memertUrl = memertUrl.replace(urlPrefix, '');
     memertUrl = memertUrl.replace(mobileUrlPrefix, '');
     const parts = memertUrl.split('/');
 
     const messageIdMatch = parts[0].match(/([0-9]+)/);
     if (!messageIdMatch) {
-        await interaction.reply('Invalid memert url provided.');
         return;
     }
     const messageId = messageIdMatch[1];
     const rawFilePath = parts[1];
     const filePath = rawFilePath.replace(/\?.*/, '');
 
-    const finalUrl = `${urlPrefix}${messageId}/${filePath}`;
-    const finalCheck = await validateImage(finalUrl);
-    if (finalCheck) {
-        const results = await jsonHandler.find(memeStorage, finalUrl);
-        if (results.length === 0) {
-            await jsonHandler.add(memeStorage, finalUrl);
-            await interaction.reply('Added new memert to the collection!');
+    const isValid = await validateImage(`${urlPrefix}${messageId}/${filePath}`);
+    if (!isValid) {
+        return;
+    }
+
+    return {
+        messageId: messageId,
+        filePath: filePath
+    }
+}
+
+const addMemert = async (interaction, memertUrl) => {
+    const memertData = await validateMemertUrl(interaction, memertUrl);
+    if (memertData) {
+        const success = await jsonHandler.addUnique(memeStorage, `${memertData.messageId}/${memertData.filePath}`);
+        if (success) {
+            await interaction.reply('Added new memert to the collection.');
         } else {
-            await interaction.reply('This memert already exists in the collection!');
+            await interaction.reply('This memert already exists in the collection.');
         }
     } else {
         await interaction.reply('Invalid memert url provided.');
