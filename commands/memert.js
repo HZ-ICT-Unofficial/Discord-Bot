@@ -2,9 +2,10 @@ const Discord = require('discord.js');
 const axios = require('axios');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const jsonHandler = require('../util/json-handler');
+require('dotenv').config();
 
 const memeStorage = `${process.env.DATA_DIR}/illegal-memes.json`;
-const memeChannelId = '887998241210245151';
+const memeChannelId = process.env.MEME_CHANNEL_ID;
 const urlPrefix = `https://cdn.discordapp.com/attachments/${memeChannelId}/`;
 const mobileUrlPrefix = `https://media.discordapp.net/attachments/${memeChannelId}/`;
 
