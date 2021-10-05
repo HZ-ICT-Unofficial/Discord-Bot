@@ -58,7 +58,7 @@ JSONHandler.read = (path) => {
             if (err) {
                 return reject(err);
             }
-            if(data){
+            if (data) {
                 return resolve(JSON.parse(data));
             }
             return resolve(false)
@@ -115,8 +115,8 @@ JSONHandler.remove = async (path, target, fileData) => {
         fileData = await JSONHandler.read(path);
     }
 
-    const results = await JSONHandler.find(path, target, fileData);
-    if (results) {
+    const results = await JSONHandler.query(path, target, fileData);
+    if (results.length > 0) {
         results.forEach((result) => {
             const index = fileData.data.indexOf(result);
             fileData.data.splice(index, 1);
@@ -126,9 +126,9 @@ JSONHandler.remove = async (path, target, fileData) => {
     return results;
 }
 
-JSONHandler.createFolder = async (path, dir) => {
+JSONHandler.createFolder = async (location, name) => {
     return new Promise((resolve, reject) => {
-        fs.mkdirSync(path + dir, (err) => {
+        fs.mkdirSync(`${location}${name}`, (err) => {
             if (err) {
                 return reject(err);
             }

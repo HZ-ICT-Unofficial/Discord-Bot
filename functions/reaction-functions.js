@@ -2,18 +2,18 @@ const jsonHandler = require('../util/json-handler');
 const silentError = require('../util/silent-error');
 
 const reactionFunctions = {};
-const reactionsPath = (guildId) => `${process.env.DATA_DIR}/${guildId}/reactions.json`;
+const getReactionsPath = (guildId) => `${process.env.DATA_DIR}/${guildId}/reactions.json`;
 
 const verifyReactionRole = async (client, messageReaction, reactionRole) => {
     const reactionChannel = await client.channels.fetch(reactionRole.channelId).catch(() => {
-        jsonHandler.remove(reactionsPath(messageReaction.message.guild.id), (storedReactionRole) => storedReactionRole.channelId === reactionRole.channelId);
+        jsonHandler.remove(getReactionsPath(messageReaction.message.guild.id), (storedReactionRole) => storedReactionRole.channelId === reactionRole.channelId);
     });
     if (!reactionChannel) {
         return false;
     }
 
     const reactionMessage = await reactionChannel.messages.fetch(reactionRole.messageId).catch(() => {
-        jsonHandler.remove(reactionsPath(messageReaction.message.guild.id), (storedReactionRole) => storedReactionRole.messageId === reactionRole.messageId);
+        jsonHandler.remove(getReactionsPath(messageReaction.message.guild.id), (storedReactionRole) => storedReactionRole.messageId === reactionRole.messageId);
     });
     if (!reactionMessage) {
         return false;
