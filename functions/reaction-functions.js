@@ -80,7 +80,7 @@ reactionFunctions.onMessageReactionRemoved = async (client, messageReaction, use
         channelId: messageReaction.message.channelId
     }
 
-    const reactionRoles = await jsonHandler.query(reactionsPath(messageReaction.message.guild.id), reactionData);
+    const reactionRoles = await jsonHandler.find(reactionsPath(messageReaction.message.guild.id), reactionData);
     if (reactionRoles.length === 0) {
         return;
     }
