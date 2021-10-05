@@ -70,8 +70,8 @@ reactionFunctions.onMessageReactionAdded = async (client, messageReaction, user)
 
     const reactionsPath = getReactionsPath(messageReaction.message.guild.id);
     const fileData = await jsonHandler.read(reactionsPath);
-    fileData.data.forEach(async (reactionRole) => {
-        giveReactionRole(client, messageReaction, user, reactionRole);
+    await fileData.data.forEach(async (reactionRole) => {
+        await giveReactionRole(client, messageReaction, user, reactionRole);
     });
 }
 
