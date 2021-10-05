@@ -85,7 +85,7 @@ reactionFunctions.onMessageReactionRemoved = async (client, messageReaction, use
     }
 
     const reactionsPath = reactionFunctions.getReactionsPath(messageReaction.message.guild.id);
-    const reactionRoles = await jsonHandler.find(reactionsPath, reactionData);
+    const reactionRoles = await jsonHandler.query(reactionsPath, reactionData);
     if (reactionRoles.length === 0) {
         return;
     }

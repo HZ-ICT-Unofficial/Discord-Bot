@@ -28,6 +28,8 @@ const areSimilarObjects = (objectA, objectB) => {
 }
 
 const areSimilarValues = (firstValue, secondValue) => {
+    console.log(firstValue)
+    console.log(secondValue)
     if (typeof firstValue !== typeof secondValue) {
         return false;
     } else if (firstValue === secondValue) {
@@ -35,10 +37,14 @@ const areSimilarValues = (firstValue, secondValue) => {
     } else if (typeof firstValue === 'function') {
         throw new Error('Functions are not supported');
     }
-    if (!Array.isArray(firstValue)) {
+    if (Array.isArray(firstValue)) {
+        return areSimilarArrays(firstValue, secondValue);
+    }
+    if(typeof firstValue === 'object' && firstValue !== null){
         return areSimilarObjects(firstValue, secondValue);
     }
-    return areSimilarArrays(firstValue, secondValue);
+    return false;
+    
 }
 
 const areEqual = (firstValue, secondValue) => {
