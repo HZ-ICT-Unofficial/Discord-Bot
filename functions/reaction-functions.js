@@ -2,18 +2,18 @@ const jsonHandler = require('../util/json-handler');
 const silentError = require('../util/silent-error');
 
 const reactionFunctions = {};
-const reactionsPath = `${process.env.DATA_DIR}/reactions.json`;
+const reactionsPath = (guildId) => `${process.env.DATA_DIR}/${guildId}/reactions.json`;
 
 const verifyReactionRole = async (client, messageReaction, reactionRole) => {
     const reactionChannel = await client.channels.fetch(reactionRole.channelId).catch(() => {
-        jsonHandler.remove(reactionsPath, (storedReactionRole) => storedReactionRole.channelId === reactionRole.channelId);
+        jsonHandler.remove(reactionsPath(messageReaction.message.guild.id), (storedReactionRole) => storedReactionRole.channelId === reactionRole.channelId);
     });
     if (!reactionChannel) {
         return false;
     }
 
     const reactionMessage = await reactionChannel.messages.fetch(reactionRole.messageId).catch(() => {
-        jsonHandler.remove(reactionsPath, (storedReactionRole) => storedReactionRole.messageId === reactionRole.messageId);
+        jsonHandler.remove(reactionsPath(messageReaction.message.guild.id), (storedReactionRole) => storedReactionRole.messageId === reactionRole.messageId);
     });
     if (!reactionMessage) {
         return false;
@@ -63,7 +63,7 @@ reactionFunctions.onMessageReactionAdded = async (client, messageReaction, user)
         return;
     }
 
-    const fileData = await jsonHandler.read(reactionsPath);
+    const fileData = await jsonHandler.read(reactionsPath(messageReaction.message.guild.id));
     fileData.data.forEach(async (reactionRole) => {
         giveReactionRole(client, messageReaction, user, reactionRole);
     });
@@ -77,10 +77,10 @@ reactionFunctions.onMessageReactionRemoved = async (client, messageReaction, use
     const reactionData = {
         messageId: messageReaction.message.id,
         emoji: messageReaction.emoji.name,
-        channel: messageReaction.message.channelId
+        channelId: messageReaction.message.channelId
     }
 
-    const reactionRoles = await jsonHandler.find(reactionsPath, reactionData);
+    const reactionRoles = await jsonHandler.query(reactionsPath(messageReaction.message.guild.id), reactionData);
     if (reactionRoles.length === 0) {
         return;
     }

@@ -58,7 +58,11 @@ JSONHandler.read = (path) => {
             if (err) {
                 return reject(err);
             }
-            return resolve(JSON.parse(data));
+            if(data){
+                return resolve(JSON.parse(data));
+            }
+            return resolve(false)
+            
         });
     });
 }
@@ -78,7 +82,6 @@ JSONHandler.filter = async (path, func, fileData) => {
     if (!fileData) {
         fileData = await JSONHandler.read(path);
     }
-    
     return fileData.data.filter(func);
 }
 
@@ -121,6 +124,17 @@ JSONHandler.remove = async (path, target, fileData) => {
         await JSONHandler.write(path, fileData);
     }
     return results;
+}
+
+JSONHandler.createFolder = async (path, dir) => {
+    return new Promise((resolve, reject) => {
+        fs.mkdirSync(path + dir, (err) => {
+            if (err) {
+                return reject(err);
+            }
+            return resolve(true);
+        })
+    });
 }
 
 module.exports = JSONHandler;

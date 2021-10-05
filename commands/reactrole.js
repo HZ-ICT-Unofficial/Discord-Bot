@@ -1,7 +1,13 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const jsonHandler = require('../util/json-handler');
-const reactionsPath = `${process.env.DATA_DIR}/reactions.json`;
+const reactionsPath = (guildId) => `${process.env.DATA_DIR}/${guildId}/reactions.json`;
 const Discord = require('discord.js');
+const defaultFile = {
+    permissions: {
+        allowedRoles: []
+    },
+    data: []
+}
 
 const silentError = () => {
     return;
@@ -75,7 +81,13 @@ const createReactionRole = (interaction, channel) => {
 const showReactionRoles = async (interaction) => {
     const reactionData = getOptionalReactionData(interaction);
     
-    const results = await jsonHandler.query(reactionsPath, reactionData);
+    const results = await jsonHandler.query(reactionsPath(interaction.guild.id), reactionData).catch((err) => {
+        if(err.code == "ENOENT"){
+            jsonHandler.createFolder(`${process.env.DATA_DIR}/`, `${interaction.guild.id}`)
+            jsonHandler.write(reactionsPath(interaction.guild.id), defaultFile)
+        }
+        return []
+    });
     const description = generateDescription(interaction, reactionData, results);
     
     const embed = new Discord.MessageEmbed({
@@ -98,9 +110,15 @@ const addReactionRole = async (interaction) => {
         return;
     }
 
-    const results = await jsonHandler.find(reactionsPath, newReactionRole);
+    const results = await jsonHandler.find(reactionsPath(interaction.guild.id), newReactionRole).catch((err) => {
+        if(err.code == "ENOENT"){
+            jsonHandler.createFolder(`${process.env.DATA_DIR}/`, `${interaction.guild.id}`)
+            jsonHandler.write(reactionsPath(interaction.guild.id), defaultFile)
+        }
+        return []
+    });
     if (results.length === 0) {
-        await jsonHandler.add(reactionsPath, newReactionRole);
+        await jsonHandler.add(reactionsPath(interaction.guild.id), newReactionRole);
         await message.react(newReactionRole.emoji);
         await interaction.reply('Added new reaction role!');
     } else {
@@ -140,8 +158,13 @@ const removeEmojis = async (interaction, reactionRoles) => {
 
 const removeReactionRoles = async (interaction) => {
     const reactionData = getOptionalReactionData(interaction);
-
-    const foundReactionRoles = await jsonHandler.remove(reactionsPath, reactionData);
+    const foundReactionRoles = await jsonHandler.remove(reactionsPath(interaction.guild.id), reactionData).catch((err) => {
+        if(err.code == "ENOENT"){
+            jsonHandler.createFolder(`${process.env.DATA_DIR}/`, `${interaction.guild.id}`)
+            jsonHandler.write(reactionsPath(interaction.guild.id), defaultFile)
+        }
+        return []
+    });
     if (foundReactionRoles.length > 0) {
         await removeEmojis(interaction, foundReactionRoles);
         await interaction.reply(`Removed ${foundReactionRoles.length} reaction roles!`);
