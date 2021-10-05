@@ -152,7 +152,7 @@ const removeBotReaction = async (interaction, reactionRole) => {
 
 const removeEmojis = async (interaction, reactionRoles) => {
     await reactionRoles.forEach(async (reactionRole) => {
-        removeBotReaction(interaction, reactionRole);
+        await removeBotReaction(interaction, reactionRole);
     });
 }
 

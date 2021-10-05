@@ -121,7 +121,7 @@ JSONHandler.remove = async (path, target, fileData) => {
         fileData = await JSONHandler.read(path);
     }
 
-    const results = await JSONHandler.find(path, target, fileData);
+    const results = await JSONHandler.query(path, target, fileData);
     if (results.length > 0) {
         results.forEach((result) => {
             const index = fileData.data.indexOf(result);
