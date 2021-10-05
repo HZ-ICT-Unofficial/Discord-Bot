@@ -28,8 +28,6 @@ const areSimilarObjects = (objectA, objectB) => {
 }
 
 const areSimilarValues = (firstValue, secondValue) => {
-    console.log(firstValue)
-    console.log(secondValue)
     if (typeof firstValue !== typeof secondValue) {
         return false;
     } else if (firstValue === secondValue) {
