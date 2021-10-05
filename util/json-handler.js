@@ -52,6 +52,12 @@ const areEqual = (firstValue, secondValue) => {
     return JSON.stringify(firstValue) === JSON.stringify(secondValue);
 }
 
+JSONHandler.open = (path) => {
+    return new Promise((resolve, reject) => {
+        // fs.open()
+    });
+}
+
 JSONHandler.read = (path) => {
     return new Promise((resolve, reject) => {
         fs.readFile(path, {encoding: 'utf8'}, (err, data) => {
@@ -115,7 +121,7 @@ JSONHandler.remove = async (path, target, fileData) => {
         fileData = await JSONHandler.read(path);
     }
 
-    const results = await JSONHandler.query(path, target, fileData);
+    const results = await JSONHandler.find(path, target, fileData);
     if (results.length > 0) {
         results.forEach((result) => {
             const index = fileData.data.indexOf(result);
@@ -126,9 +132,9 @@ JSONHandler.remove = async (path, target, fileData) => {
     return results;
 }
 
-JSONHandler.createFolder = async (location, name) => {
+JSONHandler.createDirectory = async (location, name) => {
     return new Promise((resolve, reject) => {
-        fs.mkdirSync(`${location}${name}`, (err) => {
+        fs.mkdir(`${location}/${name}`, (err) => {
             if (err) {
                 return reject(err);
             }

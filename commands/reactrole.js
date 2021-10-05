@@ -1,16 +1,27 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const jsonHandler = require('../util/json-handler');
-const reactionsPath = (guildId) => `${process.env.DATA_DIR}/${guildId}/reactions.json`;
+const reactionFunctions = require('../functions/reaction-functions');
 const Discord = require('discord.js');
-const defaultFile = {
+
+const defaultConfig = {
     permissions: {
         allowedRoles: []
     },
     data: []
-}
+};
 
 const silentError = () => {
     return;
+}
+
+const getReactionsPath = reactionFunctions.getReactionsPath;
+
+const handleDirectoryError = async (err, interaction) => {
+    const reactionsPath = getReactionsPath(interaction.guild.id);
+    if (err.code === "ENOENT") {
+        await jsonHandler.createDirectory(process.env.DATA_DIR, interaction.guild.id);
+        await jsonHandler.write(reactionsPath, defaultConfig);
+    }
 }
 
 const generateFilterText = (reactionData) => {
@@ -40,7 +51,7 @@ const isEmptyReactionData = (reactionData) => {
 
 const generateDescription = (interaction, reactionData, results) => {
     let description = '';
-    if (results.length > 0) {
+    if (results && results.length > 0) {
         results.forEach((reactionRole, index) => {
             description += `${index + 1}. **<@&${reactionRole.roleId}>** ${reactionRole.emoji}\n[View message](https://discord.com/channels/${interaction.guild.id}/${reactionRole.channelId}/${reactionRole.messageId})\n\n`;
         });
@@ -81,14 +92,9 @@ const createReactionRole = (interaction, channel) => {
 const showReactionRoles = async (interaction) => {
     const reactionData = getOptionalReactionData(interaction);
     
-    const results = await jsonHandler.query(reactionsPath(interaction.guild.id), reactionData).catch((err) => {
-        if(err.code == "ENOENT"){
-            jsonHandler.createFolder(`${process.env.DATA_DIR}/`, `${interaction.guild.id}`)
-            jsonHandler.write(reactionsPath(interaction.guild.id), defaultFile)
-        }
-        return []
-    });
-    const description = generateDescription(interaction, reactionData, results);
+    const reactionsPath = getReactionsPath(interaction.guild.id);
+    const foundReactionRoles = await jsonHandler.query(reactionsPath, reactionData).catch(async (err) => await handleDirectoryError(err, interaction));
+    const description = generateDescription(interaction, reactionData, foundReactionRoles);
     
     const embed = new Discord.MessageEmbed({
         title: '🔍 Showing reaction roles',
@@ -110,15 +116,9 @@ const addReactionRole = async (interaction) => {
         return;
     }
 
-    const results = await jsonHandler.find(reactionsPath(interaction.guild.id), newReactionRole).catch((err) => {
-        if(err.code == "ENOENT"){
-            jsonHandler.createFolder(`${process.env.DATA_DIR}/`, `${interaction.guild.id}`)
-            jsonHandler.write(reactionsPath(interaction.guild.id), defaultFile)
-        }
-        return []
-    });
-    if (results.length === 0) {
-        await jsonHandler.add(reactionsPath(interaction.guild.id), newReactionRole);
+    const reactionsPath = getReactionsPath(interaction.guild.id);
+    const isUnique = await jsonHandler.addUnique(reactionsPath, newReactionRole);
+    if (isUnique) {
         await message.react(newReactionRole.emoji);
         await interaction.reply('Added new reaction role!');
     } else {
@@ -158,14 +158,9 @@ const removeEmojis = async (interaction, reactionRoles) => {
 
 const removeReactionRoles = async (interaction) => {
     const reactionData = getOptionalReactionData(interaction);
-    const foundReactionRoles = await jsonHandler.remove(reactionsPath(interaction.guild.id), reactionData).catch((err) => {
-        if(err.code == "ENOENT"){
-            jsonHandler.createFolder(`${process.env.DATA_DIR}/`, `${interaction.guild.id}`)
-            jsonHandler.write(reactionsPath(interaction.guild.id), defaultFile)
-        }
-        return []
-    });
-    if (foundReactionRoles.length > 0) {
+    const reactionsPath = getReactionsPath(interaction.guild.id);
+    const foundReactionRoles = await jsonHandler.remove(reactionsPath, reactionData).catch(async (err) => await handleDirectoryError(err, interaction));
+    if (foundReactionRoles && foundReactionRoles.length > 0) {
         await removeEmojis(interaction, foundReactionRoles);
         await interaction.reply(`Removed ${foundReactionRoles.length} reaction roles!`);
     } else {
