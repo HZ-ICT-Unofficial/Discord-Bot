@@ -2,7 +2,6 @@ const jsonHandler = require('../util/json-handler');
 const silentError = require('../util/silent-error');
 
 const reactionFunctions = {};
-reactionFunctions.getReactionsPath = (guildId) => `${process.env.DATA_DIR}/${guildId}/reactions.json`;
 
 const verifyReactionRole = async (client, messageReaction, reactionRole) => {
     const reactionChannel = await client.channels.fetch(reactionRole.channelId).catch(async () => {
@@ -60,6 +59,7 @@ const revokeReactionRole = async (client, messageReaction, user, reactionRole) =
     }
 }
 
+reactionFunctions.getReactionsPath = (guildId) => `${process.env.DATA_DIR}/${guildId}/reactions.json`;
 
 reactionFunctions.onMessageReactionAdded = async (client, messageReaction, user) => {
     if (user.bot) {
