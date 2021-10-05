@@ -92,8 +92,8 @@ reactionFunctions.onMessageReactionRemoved = async (client, messageReaction, use
         return;
     }
 
-    reactionRoles.forEach((reactionRole) => {
-        revokeReactionRole(client, messageReaction, user, reactionRole);
+    await reactionRoles.forEach(async (reactionRole) => {
+        await revokeReactionRole(client, messageReaction, user, reactionRole);
     });
 }
 
