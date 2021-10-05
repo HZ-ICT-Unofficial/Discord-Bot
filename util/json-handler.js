@@ -52,12 +52,6 @@ const areEqual = (firstValue, secondValue) => {
     return JSON.stringify(firstValue) === JSON.stringify(secondValue);
 }
 
-JSONHandler.open = (path) => {
-    return new Promise((resolve, reject) => {
-        // fs.open()
-    });
-}
-
 JSONHandler.read = (path) => {
     return new Promise((resolve, reject) => {
         fs.readFile(path, {encoding: 'utf8'}, (err, data) => {
