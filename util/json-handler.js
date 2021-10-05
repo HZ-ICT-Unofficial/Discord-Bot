@@ -32,17 +32,13 @@ const areSimilarValues = (firstValue, secondValue) => {
         return false;
     } else if (firstValue === secondValue) {
         return true;
-    } else if (typeof firstValue === 'function') {
-        throw new Error('Functions are not supported');
+    } else if (typeof firstValue !== 'object') {
+        return false;
     }
     if (Array.isArray(firstValue)) {
-        return areSimilarArrays(firstValue, secondValue);
+        return areSimilarArrays(firstValue, secondValue);    
     }
-    if(typeof firstValue === 'object' && firstValue !== null){
-        return areSimilarObjects(firstValue, secondValue);
-    }
-    return false;
-    
+    return areSimilarObjects(firstValue, secondValue);
 }
 
 const areEqual = (firstValue, secondValue) => {
@@ -50,8 +46,8 @@ const areEqual = (firstValue, secondValue) => {
         return false;
     } else if (firstValue === secondValue) {
         return true;
-    } else if (typeof firstValue === 'function') {
-        throw new Error('Functions are not supported');
+    } else if (typeof firstValue !== 'object') {
+        return false;
     }
     return JSON.stringify(firstValue) === JSON.stringify(secondValue);
 }
