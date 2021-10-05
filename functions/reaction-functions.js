@@ -3,11 +3,9 @@ const silentError = require('../util/silent-error');
 
 const reactionFunctions = {};
 
-const getReactionsPath = (guildId) => `${process.env.DATA_DIR}/${guildId}/reactions.json`;
-
 const verifyReactionRole = async (client, messageReaction, reactionRole) => {
     const reactionChannel = await client.channels.fetch(reactionRole.channelId).catch(async () => {
-        const reactionsPath = getReactionsPath(messageReaction.message.guild.id);
+        const reactionsPath = reactionFunctions.getReactionsPath(messageReaction.message.guild.id);
         await jsonHandler.remove(reactionsPath, (storedReactionRole) => storedReactionRole.channelId === reactionRole.channelId);
     });
     if (!reactionChannel) {
@@ -15,7 +13,7 @@ const verifyReactionRole = async (client, messageReaction, reactionRole) => {
     }
     
     const reactionMessage = await reactionChannel.messages.fetch(reactionRole.messageId).catch(async () => {
-        const reactionsPath = getReactionsPath(messageReaction.message.guild.id);
+        const reactionsPath = reactionFunctions.getReactionsPath(messageReaction.message.guild.id);
         await jsonHandler.remove(reactionsPath, (storedReactionRole) => storedReactionRole.messageId === reactionRole.messageId);
     });
     if (!reactionMessage) {
@@ -61,14 +59,14 @@ const revokeReactionRole = async (client, messageReaction, user, reactionRole) =
     }
 }
 
-reactionFunctions.getReactionsPath = getReactionsPath;
+reactionFunctions.getReactionsPath = (guildId) => `${process.env.DATA_DIR}/${guildId}/reactions.json`;
 
 reactionFunctions.onMessageReactionAdded = async (client, messageReaction, user) => {
     if (user.bot) {
         return;
     }
 
-    const reactionsPath = getReactionsPath(messageReaction.message.guild.id);
+    const reactionsPath = reactionFunctions.getReactionsPath(messageReaction.message.guild.id);
     const fileData = await jsonHandler.read(reactionsPath);
     await fileData.data.forEach(async (reactionRole) => {
         await giveReactionRole(client, messageReaction, user, reactionRole);
@@ -86,8 +84,8 @@ reactionFunctions.onMessageReactionRemoved = async (client, messageReaction, use
         channelId: messageReaction.message.channelId
     }
 
-    const reactionsPath = getReactionsPath(messageReaction.message.guild.id);
-    const reactionRoles = await jsonHandler.find(reactionsPath, reactionData);
+    const reactionsPath = reactionFunctions.getReactionsPath(messageReaction.message.guild.id);
+    const reactionRoles = await jsonHandler.query(reactionsPath, reactionData);
     if (reactionRoles.length === 0) {
         return;
     }
