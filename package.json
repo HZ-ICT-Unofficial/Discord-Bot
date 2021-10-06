@@ -1,7 +1,7 @@
 {
-  "name": "testbot",
+  "name": "bottert",
   "version": "1.0.0",
-  "description": "",
+  "description": "Just another discord bottert",
   "main": "bot.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
