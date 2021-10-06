@@ -1,35 +1,44 @@
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
-const fs = require('fs');
 require('dotenv').config();
 
+const commandLoader = require('./commands');
 const rest = new REST({ version: '9' }).setToken(process.env.BOT_TOKEN);
-const TEST_GUILD_ID = '892730236406472734';
 
-const commands = [];
-const commandFiles = fs.readdirSync(process.env.COMMANDS_DIR).filter(file => file.endsWith('.js'));
-for (const fileName of commandFiles) {
-	const command = require(`${process.env.COMMANDS_DIR}/${fileName}`);
-    commands.push(command.info);
+const getCommandsInfo = () => {
+	const commands = commandLoader.load();
+	return Object.values(commands).map((command) => command.info);
+}
+
+const saveGlobalCommands = async (commandsInfo) => {
+	await rest.put(
+		Routes.applicationCommands(process.env.CLIENT_ID),
+		{
+			body: commandsInfo
+		},
+	);
+}
+
+const saveGuildCommands = async (guildId, commandsInfo) => {
+	await rest.put(
+		Routes.applicationGuildCommands(process.env.CLIENT_ID, guildId),
+		{
+			body: commandsInfo
+		},
+	);
 }
 
 (async () => {
 	try {
-		console.log('Started refreshing application (/) commands.');
-		await rest.put(
-			Routes.applicationCommands(process.env.CLIENT_ID),
-			{
-				body: commands
-			},
-		);
+		console.log('Started refreshing commands.');
 		
-		await rest.put(
-			Routes.applicationGuildCommands(process.env.CLIENT_ID, TEST_GUILD_ID),
-			{
-				body: commands
-			},
-		);
-		console.log('Successfully reloaded application (/) commands.');
+		const TESTING_GUILD_ID = '892730236406472734';
+		const commandsInfo = getCommandsInfo();
+
+		// saveGlobalCommands([]);
+		saveGuildCommands(TESTING_GUILD_ID, commandsInfo);
+
+		console.log('Successfully reloaded commands.');
 	} catch (error) {
 		console.error(error);
 	}

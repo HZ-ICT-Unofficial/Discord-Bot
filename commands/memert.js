@@ -4,7 +4,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const jsonHandler = require('../util/json-handler');
 require('dotenv').config();
 
-const memeStorage = `${process.env.DATA_DIR}/illegal-memes.json`;
+const memeStorage = './data/illegal-memes.json';
 const memeChannelId = process.env.MEME_CHANNEL_ID;
 const urlPrefix = `https://cdn.discordapp.com/attachments/${memeChannelId}/`;
 const mobileUrlPrefix = `https://media.discordapp.net/attachments/${memeChannelId}/`;
@@ -109,6 +109,6 @@ const info = new SlashCommandBuilder()
     );
 
 module.exports = {
-    run: run,
-    info: info
+    run,
+    info
 }

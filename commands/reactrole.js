@@ -1,28 +1,9 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const jsonHandler = require('../util/json-handler');
-const reactionFunctions = require('../functions/reaction-functions');
 const Discord = require('discord.js');
 
-const defaultConfig = {
-    permissions: {
-        allowedRoles: []
-    },
-    data: []
-};
-
-const silentError = () => {
-    return;
-}
-
-const getReactionsPath = reactionFunctions.getReactionsPath;
-
-const handleDirectoryError = async (err, interaction) => {
-    const reactionsPath = getReactionsPath(interaction.guild.id);
-    if (err.code === "ENOENT") {
-        await jsonHandler.createDirectory(process.env.DATA_DIR, interaction.guild.id);
-        await jsonHandler.write(reactionsPath, defaultConfig);
-    }
-}
+const jsonHandler = require('../util/json-handler');
+const reactionFunctions = require('../functions/reactions');
+const silentError = require('../util/silent-error');
 
 const generateFilterText = (reactionData) => {
     let filterText = '**Filters used:**';
@@ -46,7 +27,7 @@ const generateFilterText = (reactionData) => {
 }
 
 const isEmptyReactionData = (reactionData) => {
-    return Object.values(reactionData).filter(x => x !== null).length > 0;
+    return Object.values(reactionData).filter((x) => x !== null).length > 0;
 }
 
 const generateDescription = (interaction, reactionData, results) => {
@@ -66,7 +47,7 @@ const generateDescription = (interaction, reactionData, results) => {
     return description;
 }
 
-const getOptionalReactionData = (interaction) => {
+const getReactionDataQuery = (interaction) => {
     const role = interaction.options.getRole('role', false);
     const channel = interaction.options.getChannel('channel', false);
     const emoji = interaction.options.getString('emoji', false);
@@ -80,7 +61,7 @@ const getOptionalReactionData = (interaction) => {
     }
 }
 
-const createReactionRole = (interaction, channel) => {
+const generateReactionData = (interaction, channel) => {
     return {
         messageId: interaction.options.getString('message_id', true),
         emoji: interaction.options.getString('emoji', true),
@@ -90,40 +71,19 @@ const createReactionRole = (interaction, channel) => {
 }
 
 const showReactionRoles = async (interaction) => {
-    const reactionData = getOptionalReactionData(interaction);
+    const reactionData = getReactionDataQuery(interaction);
     
-    const reactionsPath = getReactionsPath(interaction.guild.id);
-    const foundReactionRoles = await jsonHandler.query(reactionsPath, reactionData).catch(async (err) => await handleDirectoryError(err, interaction));
-    const description = generateDescription(interaction, reactionData, foundReactionRoles);
+    const guildId = interaction.guild.id;
+    const reactionRoles = await reactionFunctions.query(guildId, reactionData);
     
     const embed = new Discord.MessageEmbed({
         title: '🔍 Showing reaction roles',
         color: '#717f80',
-        description: description
+        description: generateDescription(interaction, reactionData, reactionRoles)
     });
     
-    interaction.channel.send({embeds: [embed]}).catch(silentError);
     await interaction.reply('Showing results');
-}
-
-const addReactionRole = async (interaction) => {
-    const channel = interaction.options.getChannel('channel', false) || interaction.channel;
-    const newReactionRole = createReactionRole(interaction, channel);
-
-    const message = await channel.messages.fetch(newReactionRole.messageId).catch(silentError);
-    if (!message) {
-        await interaction.reply('The message could not be found!');
-        return;
-    }
-
-    const reactionsPath = getReactionsPath(interaction.guild.id);
-    const isUnique = await jsonHandler.addUnique(reactionsPath, newReactionRole);
-    if (isUnique) {
-        await message.react(newReactionRole.emoji);
-        await interaction.reply('Added new reaction role!');
-    } else {
-        await interaction.reply('This reaction role already exists!');
-    }
+    await interaction.channel.send({embeds: [embed]}).catch(silentError);
 }
 
 const findMessageByReactionRole = async (interaction, reactionRole) => {
@@ -132,9 +92,19 @@ const findMessageByReactionRole = async (interaction, reactionRole) => {
         return;
     }
 
-    const message = await channel.messages.fetch(reactionRole.messageId).catch(silentError);
-    if (message) {
-        return message;
+    return await channel.messages.fetch(reactionRole.messageId).catch(silentError);
+}
+
+const addReactionRole = async (interaction) => {
+    const channel = interaction.options.getChannel('channel', false) || interaction.channel;
+    const reactionData = generateReactionData(interaction, channel);
+    const isUnique = await reactionFunctions.create(interaction.guild.id, reactionData);
+    const message = await findMessageByReactionRole(interaction, reactionData);
+    if (isUnique && message) {
+        await message.react(reactionData.emoji);
+        await interaction.reply('Added new reaction role!');
+    } else {
+        await interaction.reply('This reaction role already exists!');
     }
 }
 
@@ -157,12 +127,12 @@ const removeEmojis = async (interaction, reactionRoles) => {
 }
 
 const removeReactionRoles = async (interaction) => {
-    const reactionData = getOptionalReactionData(interaction);
-    const reactionsPath = getReactionsPath(interaction.guild.id);
-    const foundReactionRoles = await jsonHandler.remove(reactionsPath, reactionData).catch(async (err) => await handleDirectoryError(err, interaction));
-    if (foundReactionRoles && foundReactionRoles.length > 0) {
-        await removeEmojis(interaction, foundReactionRoles);
-        await interaction.reply(`Removed ${foundReactionRoles.length} reaction roles!`);
+    const reactionData = getReactionDataQuery(interaction);
+    const reactionRoles = await reactionFunctions.remove(interaction.guild.id, reactionData);
+
+    if (reactionRoles.length > 0) {
+        await removeEmojis(interaction, reactionRoles);
+        await interaction.reply(`Removed ${reactionRoles.length} reaction roles!`);
     } else {
         await interaction.reply('Could not find any reaction roles to remove!');
     }
@@ -263,6 +233,6 @@ const info = new SlashCommandBuilder()
     );
 
 module.exports = {
-    run: run,
-    info: info
+    run,
+    info
 };

@@ -1,20 +1,17 @@
 {
-  "name": "bottert",
+  "name": "testbot",
   "version": "1.0.0",
-  "description": "Een hele mooie bot",
+  "description": "",
   "main": "bot.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "HZ - HBO ICT",
+  "author": "",
   "license": "ISC",
   "dependencies": {
     "@discordjs/rest": "^0.1.0-canary.0",
     "axios": "^0.22.0",
-    "discord-api-types": "^0.22.0",
     "discord.js": "^13.1.0",
-    "dotenv": "^10.0.0",
-    "node-fetch": "^2.6.5",
-    "schedule": "^0.5.0"
+    "dotenv": "^10.0.0"
   }
 }

@@ -78,44 +78,36 @@ JSONHandler.write = (path, data) => {
     });
 }
 
-JSONHandler.filter = async (path, func, fileData) => {
-    if (!fileData) {
-        fileData = await JSONHandler.read(path);
-    }
+JSONHandler.filter = async (path, func) => {
+    const fileData = await JSONHandler.read(path);
     return fileData.data.filter(func);
 }
 
-JSONHandler.query = async (path, targetValue, fileData) => {
-    return JSONHandler.filter(path, (existingValue) => areSimilarValues(existingValue, targetValue), fileData);
+JSONHandler.query = async (path, targetValue) => {
+    return JSONHandler.filter(path, (existingValue) => areSimilarValues(existingValue, targetValue));
 }
 
-JSONHandler.find = async (path, targetValue, fileData) => {
-    return JSONHandler.filter(path, (existingValue) => areEqual(existingValue, targetValue), fileData);
+JSONHandler.find = async (path, targetValue) => {
+    return JSONHandler.filter(path, (existingValue) => areEqual(existingValue, targetValue));
 }
 
-JSONHandler.add = async (path, newData, fileData) => {
-    if (!fileData) {
-        fileData = await JSONHandler.read(path);
-    }
+JSONHandler.add = async (path, newData) => {
+    const fileData = await JSONHandler.read(path);
     fileData.data.push(newData);
-    await JSONHandler.write(path, fileData);
+    return await JSONHandler.write(path, fileData);
 }
 
-JSONHandler.addUnique = async (path, newData, fileData) => {
-    const results = await JSONHandler.find(path, newData, fileData);
+JSONHandler.addUnique = async (path, newData) => {
+    const results = await JSONHandler.find(path, newData);
     if (results.length > 0) {
-        return false;
+        return;
     }
-    await JSONHandler.add(path, newData, fileData);
-    return true;
+    return await JSONHandler.add(path, newData);
 }
 
-JSONHandler.remove = async (path, target, fileData) => {
-    if (!fileData) {
-        fileData = await JSONHandler.read(path);
-    }
-
-    const results = await JSONHandler.query(path, target, fileData);
+JSONHandler.remove = async (path, target) => {
+    const fileData = await JSONHandler.read(path);
+    const results = await JSONHandler.query(path, target);
     if (results.length > 0) {
         results.forEach((result) => {
             const index = fileData.data.indexOf(result);
@@ -124,17 +116,6 @@ JSONHandler.remove = async (path, target, fileData) => {
         await JSONHandler.write(path, fileData);
     }
     return results;
-}
-
-JSONHandler.createDirectory = async (location, name) => {
-    return new Promise((resolve, reject) => {
-        fs.mkdir(`${location}/${name}`, (err) => {
-            if (err) {
-                return reject(err);
-            }
-            return resolve(true);
-        })
-    });
 }
 
 module.exports = JSONHandler;
